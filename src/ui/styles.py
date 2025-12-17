@@ -261,6 +261,54 @@ def inject_styles(theme: str = "Dark") -> None:
                 font-weight: 500;
                 color: {chip_text} !important;
             }}
+
+            /* Fake video player for movie browser mode */
+            .fake-player {{
+                position: relative;
+                width: 100%;
+                padding-top: 56.25%; /* 16:9 ratio */
+                border-radius: 24px;
+                overflow: hidden;
+                background: radial-gradient(circle at 10% 10%, rgba(255,255,255,0.18), transparent 40%),
+                            radial-gradient(circle at 90% 0%, rgba(255,107,53,0.35), transparent 45%),
+                            #050814;
+                box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+                border: 1px solid {border_color};
+            }}
+
+            .fake-player-overlay {{
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                padding: 24px 28px;
+                background: linear-gradient(180deg, rgba(5,8,20,0.05) 0%, rgba(5,8,20,0.85) 100%);
+            }}
+
+            .fake-player-overlay h2 {{
+                margin: 4px 0 6px;
+                font-size: 1.6rem;
+                letter-spacing: -0.02em;
+            }}
+
+            .fake-player-meta {{
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }}
+
+            .pill {{
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 12px;
+                border-radius: 999px;
+                font-size: 0.75rem;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                border: 1px solid rgba(255,255,255,0.4);
+                background: rgba(15,23,42,0.6);
+            }}
             
             div[data-testid="stDataFrame"] > div {{
                 border-radius: 26px;

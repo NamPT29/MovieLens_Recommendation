@@ -89,6 +89,12 @@ def main() -> None:
         step=0.05,
         help="Điều chỉnh tỷ lệ trọng số giữa collaborative (cao) và content-based (thấp).",
     )
+    view_mode = st.sidebar.radio(
+        "Chế độ hiển thị",
+        ["Dashboard phân tích", "Movie browser (mô phỏng xem phim)"],
+        index=0,
+        help="Chuyển sang chế độ mô phỏng web xem phim với player giả lập và danh sách đề xuất.",
+    )
     inject_styles(theme_choice)
 
     # Load models and data
@@ -177,44 +183,115 @@ def main() -> None:
 
     # Render UI components
     profile = describe_user_profile(user_history, item_df)
-    render_hero_card()
-    render_stat_cards(profile)
 
-    # Analytics charts
-    rating_fig, genre_fig, rating_label, genre_label = build_insight_figures(
-        user_history, item_df, ratings
-    )
-    insight_col1, insight_col2 = st.columns(2, gap="large")
-    with insight_col1:
-        st.markdown(f"#### {rating_label}")
-        st.plotly_chart(rating_fig, width='stretch', config={"displayModeBar": False})
-    with insight_col2:
-        st.markdown(f"#### {genre_label}")
-        st.plotly_chart(genre_fig, width='stretch', config={"displayModeBar": False})
+    if view_mode == "Dashboard phân tích":
+        render_hero_card()
+        render_stat_cards(profile)
 
-    pop_fig, scatter_fig, pop_label, scatter_label = build_catalogue_figures(ratings, item_df)
-    global_col1, global_col2 = st.columns(2, gap="large")
-    with global_col1:
-        st.markdown(f"#### {pop_label}")
-        st.plotly_chart(pop_fig, width='stretch', config={"displayModeBar": False})
-    with global_col2:
-        st.markdown(f"#### {scatter_label}")
-        st.plotly_chart(scatter_fig, width='stretch', config={"displayModeBar": False})
+        # Analytics charts
+        rating_fig, genre_fig, rating_label, genre_label = build_insight_figures(
+            user_history, item_df, ratings
+        )
+        insight_col1, insight_col2 = st.columns(2, gap="large")
+        with insight_col1:
+            st.markdown(f"#### {rating_label}")
+            st.plotly_chart(rating_fig, width='stretch', config={"displayModeBar": False})
+        with insight_col2:
+            st.markdown(f"#### {genre_label}")
+            st.plotly_chart(genre_fig, width='stretch', config={"displayModeBar": False})
 
-    # Model description
-    genre_phrase = f" · Lọc: {genre_filter.title()}" if genre_filter else ""
-    alpha_phrase = f" · α={hybrid_alpha:.2f}" if model_choice == "Hybrid" else ""
-    context_line = f"User #{user_id} · Top {top_k}{genre_phrase}{alpha_phrase}"
-    render_model_card(model_choice, MODEL_DESCRIPTIONS, context_line)
+        pop_fig, scatter_fig, pop_label, scatter_label = build_catalogue_figures(ratings, item_df)
+        global_col1, global_col2 = st.columns(2, gap="large")
+        with global_col1:
+            st.markdown(f"#### {pop_label}")
+            st.plotly_chart(pop_fig, width='stretch', config={"displayModeBar": False})
+        with global_col2:
+            st.markdown(f"#### {scatter_label}")
+            st.plotly_chart(scatter_fig, width='stretch', config={"displayModeBar": False})
 
-    # Recommendations table
-    st.subheader("Bảng xếp hạng đề xuất")
-    display_df = recs[base_display_cols].rename(
-        columns={"clean_title": "Title", "model_score": "Model Score"}
-    )
-    display_df = display_df.loc[:, ~display_df.columns.duplicated()]
-    render_top_picks(display_df)
-    st.dataframe(display_df, width='stretch', height=540)
+        # Model description
+        genre_phrase = f" · Lọc: {genre_filter.title()}" if genre_filter else ""
+        alpha_phrase = f" · α={hybrid_alpha:.2f}" if model_choice == "Hybrid" else ""
+        context_line = f"User #{user_id} · Top {top_k}{genre_phrase}{alpha_phrase}"
+        render_model_card(model_choice, MODEL_DESCRIPTIONS, context_line)
+
+        # Recommendations table
+        st.subheader("Bảng xếp hạng đề xuất")
+        display_df = recs[base_display_cols].rename(
+            columns={"clean_title": "Title", "model_score": "Model Score"}
+        )
+        display_df = display_df.loc[:, ~display_df.columns.duplicated()]
+        render_top_picks(display_df)
+        st.dataframe(display_df, width='stretch', height=540)
+    else:
+        render_hero_card()
+        render_stat_cards(profile)
+
+        st.subheader("Màn hình xem phim (mô phỏng)")
+        if recs.empty:
+            st.info("Không có phim phù hợp để gợi ý cho cấu hình hiện tại.")
+        else:
+            movie_titles = recs["clean_title"].tolist()
+            default_index = 0
+            selected_title = st.selectbox(
+                "Chọn phim để xem",
+                movie_titles,
+                index=default_index,
+                help="Chọn một phim trong danh sách gợi ý để mô phỏng màn hình xem phim.",
+            )
+            current_movie = recs[recs["clean_title"] == selected_title].iloc[0]
+
+            col_player, col_meta = st.columns([3, 2], gap="large")
+            with col_player:
+                genres_text = str(current_movie.get("genres", ""))
+                st.markdown(
+                    f"""
+                    <div class="fake-player">
+                        <div class="fake-player-overlay">
+                            <span class="pill">NOW PLAYING</span>
+                            <h2>{current_movie['clean_title']}</h2>
+                            <p class="fake-player-meta">{genres_text}</p>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_meta:
+                st.markdown("#### Thông tin phim")
+                st.write(f"**Thể loại:** {current_movie.get('genres', 'N/A')}")
+                avg_rating_val = current_movie.get("avg_rating")
+                try:
+                    st.write(f"**Điểm trung bình:** {float(avg_rating_val):.2f}")
+                except Exception:
+                    st.write("**Điểm trung bình:** N/A")
+                st.write(f"**Số lượt đánh giá:** {int(current_movie.get('rating_count', 0))}")
+                st.write(f"**Model gợi ý:** {model_choice}")
+                st.write(f"**User:** #{user_id}")
+
+            st.markdown("### Phim tiếp theo dành cho bạn")
+            next_recs = recs[recs["clean_title"] != selected_title].head(max(top_k - 1, 1))
+            if next_recs.empty:
+                st.info("Không còn phim nào khác trong danh sách đề xuất.")
+            else:
+                browser_cols = [
+                    "clean_title",
+                    "genres",
+                    "avg_rating",
+                    "rating_count",
+                    "model_score",
+                ]
+                browser_cols = [c for c in browser_cols if c in next_recs.columns]
+                browser_df = next_recs[browser_cols].rename(
+                    columns={
+                        "clean_title": "Title",
+                        "avg_rating": "Avg Rating",
+                        "rating_count": "#Ratings",
+                        "model_score": "Model Score",
+                    }
+                )
+                browser_df = browser_df.loc[:, ~browser_df.columns.duplicated()]
+                st.dataframe(browser_df, width='stretch', height=420)
 
     # Telemetry controls
     log_box = st.sidebar.container()
