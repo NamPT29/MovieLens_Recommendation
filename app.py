@@ -254,7 +254,15 @@ def main() -> None:
                         poster_url = None
 
                 if poster_url:
-                    st.image(poster_url, use_column_width=True)
+                    # Hiển thị poster nhỏ lại (~60% chiều rộng cột) cho dễ nhìn
+                    st.markdown(
+                        f"""
+                        <div style="max-width: 60%; margin: 0 auto;">
+                            <img src="{poster_url}" alt="Poster" style="width: 100%; border-radius: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.7);" />
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 else:
                     st.markdown(
                         f"""
