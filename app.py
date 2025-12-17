@@ -36,19 +36,30 @@ def get_models():
         st.info("🔄 This may take 2-5 minutes. Please wait...")
         
         try:
-            # Import and run training script
             import sys
             sys.path.insert(0, str(Path(__file__).parent))
-            from scripts.train_models import main as train_main
             
+            # Check if data exists, if not download it
+            data_path = Path("data/raw/ml-latest-small/ratings.csv")
+            if not data_path.exists():
+                st.info("📥 Downloading MovieLens dataset...")
+                from scripts.download_movielens import main as download_main
+                with st.spinner("Downloading dataset..."):
+                    download_main()
+                st.success("✅ Dataset downloaded!")
+            
+            # Train models
+            st.info("🤖 Training recommendation models...")
+            from scripts.train_models import main as train_main
             with st.spinner("Training models..."):
                 train_main()
             
             st.success("✅ Models trained successfully! Reloading app...")
             st.rerun()
         except Exception as e:
-            st.error(f"❌ Error training models: {str(e)}")
-            st.info("Please check that data files are available in data/raw/ml-latest-small/")
+            st.error(f"❌ Error during setup: {str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
             st.stop()
     
     content_model, collab_model, feature_store = load_models(ARTIFACT_DIR)
