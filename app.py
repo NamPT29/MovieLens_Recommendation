@@ -18,6 +18,7 @@ from src.analytics import (
     build_catalogue_figures,
     build_usage_timeline,
 )
+from src.tmdb import get_poster_url
 
 ARTIFACT_DIR = Path("models/artifacts")
 
@@ -259,6 +260,17 @@ def main() -> None:
 
             with col_meta:
                 st.markdown("#### Thông tin phim")
+
+                poster_url = None
+                if "movieId" in current_movie:
+                    try:
+                        poster_url = get_poster_url(int(current_movie["movieId"]))
+                    except Exception:
+                        poster_url = None
+
+                if poster_url:
+                    st.image(poster_url, use_column_width=True)
+
                 st.write(f"**Thể loại:** {current_movie.get('genres', 'N/A')}")
                 avg_rating_val = current_movie.get("avg_rating")
                 try:
