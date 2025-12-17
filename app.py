@@ -245,21 +245,6 @@ def main() -> None:
             col_player, col_meta = st.columns([3, 2], gap="large")
             with col_player:
                 genres_text = str(current_movie.get("genres", ""))
-                st.markdown(
-                    f"""
-                    <div class="fake-player">
-                        <div class="fake-player-overlay">
-                            <span class="pill">NOW PLAYING</span>
-                            <h2>{current_movie['clean_title']}</h2>
-                            <p class="fake-player-meta">{genres_text}</p>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-            with col_meta:
-                st.markdown("#### Thông tin phim")
 
                 poster_url = None
                 if "movieId" in current_movie:
@@ -270,6 +255,22 @@ def main() -> None:
 
                 if poster_url:
                     st.image(poster_url, use_column_width=True)
+                else:
+                    st.markdown(
+                        f"""
+                        <div class="fake-player">
+                            <div class="fake-player-overlay">
+                                <span class="pill">NOW PLAYING</span>
+                                <h2>{current_movie['clean_title']}</h2>
+                                <p class="fake-player-meta">{genres_text}</p>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+            with col_meta:
+                st.markdown("#### Thông tin phim")
 
                 st.write(f"**Thể loại:** {current_movie.get('genres', 'N/A')}")
                 avg_rating_val = current_movie.get("avg_rating")
