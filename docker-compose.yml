@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  streamlit:
+    build: .
+    container_name: movielens-recommender
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-}
+    restart: unless-stopped
+    networks:
+      - recommender-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: movielens-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=movielens
+      - MYSQL_USER=recommender
+      - MYSQL_PASSWORD=recommenderpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - recommender-network
+
+networks:
+  recommender-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
