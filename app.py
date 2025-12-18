@@ -17,6 +17,7 @@ from src.analytics import (
     build_insight_figures,
     build_catalogue_figures,
     build_usage_timeline,
+    build_additional_figures,
 )
 from src.tmdb import get_poster_url
 
@@ -209,6 +210,16 @@ def main() -> None:
         with global_col2:
             st.markdown(f"#### {scatter_label}")
             st.plotly_chart(scatter_fig, width='stretch', config={"displayModeBar": False})
+
+        # Additional analytics charts
+        extra_fig1, extra_fig2, extra_label1, extra_label2 = build_additional_figures(ratings)
+        extra_col1, extra_col2 = st.columns(2, gap="large")
+        with extra_col1:
+            st.markdown(f"#### {extra_label1}")
+            st.plotly_chart(extra_fig1, width='stretch', config={"displayModeBar": False})
+        with extra_col2:
+            st.markdown(f"#### {extra_label2}")
+            st.plotly_chart(extra_fig2, width='stretch', config={"displayModeBar": False})
 
         # Model description
         genre_phrase = f" · Lọc: {genre_filter.title()}" if genre_filter else ""

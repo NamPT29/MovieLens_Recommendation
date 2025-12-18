@@ -111,6 +111,72 @@ def build_catalogue_figures(ratings: pd.DataFrame, item_df: pd.DataFrame) -> tup
     return pop_fig, scatter_fig, "Top phim được đánh giá nhiều nhất", "Mối quan hệ lượt đánh giá vs. điểm"
 
 
+def build_additional_figures(ratings: pd.DataFrame) -> tuple[Figure, Figure, str, str]:
+    """Build additional charts for user activity and time dynamics.
+
+    - Histogram phân bố số lượt rating theo user.
+    - Biểu đồ số lượt rating theo năm (từ timestamp).
+    """
+
+    # Phân bố số lượt rating trên mỗi user
+    user_counts = (
+        ratings.groupby("userId")["rating"]
+        .count()
+        .reset_index(name="rating_count")
+    )
+
+    user_activity_fig = px.histogram(
+        user_counts,
+        x="rating_count",
+        nbins=20,
+        labels={"rating_count": "Số lượt rating / user"},
+        color_discrete_sequence=["#46d4a5"],
+    )
+    user_activity_fig.update_layout(
+        margin=dict(l=10, r=10, t=10, b=10),
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    # Số lượt rating theo năm (dựa trên timestamp)
+    time_df = ratings.copy()
+    if "timestamp" in time_df.columns:
+        time_df["datetime"] = pd.to_datetime(time_df["timestamp"], unit="s", errors="coerce")
+        time_df["year"] = time_df["datetime"].dt.year
+        year_counts = (
+            time_df.dropna(subset=["year"])
+            .groupby("year")["rating"]
+            .count()
+            .reset_index(name="rating_count")
+            .sort_values("year")
+        )
+    else:
+        # Fallback: không có timestamp, dùng chỉ số giả lập
+        year_counts = pd.DataFrame(columns=["year", "rating_count"])
+
+    year_fig = px.bar(
+        year_counts,
+        x="year",
+        y="rating_count",
+        labels={"year": "Năm", "rating_count": "Số lượt rating"},
+        color_discrete_sequence=["#f7b955"],
+    )
+    year_fig.update_layout(
+        margin=dict(l=40, r=10, t=10, b=10),
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    return (
+        user_activity_fig,
+        year_fig,
+        "Phân bố số lượt rating theo user",
+        "Số lượt rating theo năm",
+    )
+
+
 def build_usage_timeline(logs: list[dict]) -> tuple[pd.DataFrame, Figure | None]:
     """Build timeline visualization of user interactions."""
     if not logs:
