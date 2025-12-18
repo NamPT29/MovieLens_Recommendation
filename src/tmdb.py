@@ -10,6 +10,7 @@ import os
 import pandas as pd
 import requests
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
@@ -23,11 +24,15 @@ def _get_api_key() -> Optional[str]:
     or as an environment variable.
     """
 
-    # Prefer Streamlit secrets on Streamlit Cloud
-    if "TMDB_API_KEY" in st.secrets:
-        key = str(st.secrets["TMDB_API_KEY"]).strip()
-        if key:
-            return key
+    # Prefer Streamlit secrets on Streamlit Cloud when available
+    try:
+        if "TMDB_API_KEY" in st.secrets:
+            key = str(st.secrets["TMDB_API_KEY"]).strip()
+            if key:
+                return key
+    except StreamlitSecretNotFoundError:
+        # No local secrets.toml configured; fall back to environment
+        pass
 
     # Fallback to environment variable
     key = os.getenv("TMDB_API_KEY", "").strip()
